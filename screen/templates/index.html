@@ -1,0 +1,68 @@
+<!-- chat/templates/chat/room.html -->
+{% load bootstrap3 %}
+
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>OPEN 手机</title>
+</head>
+<body>
+    　<script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script>
+
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style type="text/css">
+        body{
+        text-align:-webkit-center
+        }
+        .shang{
+        height:70%
+        }
+         .xia{
+        height:30%;
+        text-align:center
+        }
+        .begin_use{
+        background:#006eff;
+        margin:0 auto;
+        width:80%}
+    </style>
+<div style="height:3rem">
+
+</div>
+<div id="device" style="width:50% ;height:17rem;text-align:center" >
+
+</div>
+
+
+</body>
+<script>
+$.ajax({
+    url:'/screen/getdevice',
+    type:"get",
+    dataType: 'json',
+    success:function(res) {
+        console.log(res['data'])
+        for (var i=0;i<res['count'];i++){
+            str='<div  style="border:solid 1px ;float:left;width:25%;margin-right:5%"  > <div class="shang">'+
+                res['data'][i]['device'] +
+                '</div ><div class="xia"  onclick="connect('+ "'"+ res['data'][i]['device']+"'"+')"><div class="begin_use">开始使用</div></div></div>'
+                console.log(str)
+            $("#device").append(str)
+        }
+           }
+           })
+
+function connect(e){
+    $.ajax({
+        url:'/screen/stfdevice',
+        type:"post",
+        data:{'device':e},
+        dataType: 'json',
+        success:function(res) {
+            window.location.href='/screen/'+e
+               }
+               })
+}
+</script>
+</html>

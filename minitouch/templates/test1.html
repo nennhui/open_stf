@@ -1,0 +1,62 @@
+{% load bootstrap3 %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bootstrap Learning</title>
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style type="text/css">
+.title{
+height:60px;
+background:#f5f5f5;
+line-height:60px;
+
+}
+    </style>
+</head>
+<body>
+
+<div class="container-fluid title">
+    <div class="row" >
+
+        <div class="col-md-1 "  >真机调试</div>
+            <div class="col-md-8 ">你好</div>
+            <div class="col-md-3 ">
+                <div>结束调试</div>
+            </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row" >
+        <div class="col-md-6 ">
+            <div style="float:left;width:40%">
+                <div style="padding:50px;border-right:1px solid #eeeeee">
+                    <div style="">
+                                <canvas id="canvas" style=""></canvas>
+                    </div>
+                    <div style="float:left;margin-top:20px">
+
+                             <button  onclick="cmd('KEYCODE_HOME')" >home</button>
+                             <button  onclick="cmd('KEYCODE_MENU')">菜单栏</button>
+                        <button onclick="cmd('KEYCODE_BACK')">返回</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+                <div class="col-md-6 ">
+<div id="xml" style="float:right;width:60%">
+    <div>
+        <form id= "ss">
+              <p >上传文件： <input type="file" id="uploadForm"/></p>
+           <input id="dosubmit" type="button" name="dosubmit" value="ajax上传">
+        </form>
+    </div>
+    <label>历史提交apk</label>
+</div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

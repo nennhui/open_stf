@@ -1,0 +1,287 @@
+{% load bootstrap3 %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bootstrap Learning</title>
+    　<script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script>
+
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style type="text/css">
+.title{
+height:60px;
+background:#f5f5f5;
+line-height:60px;
+}
+.tip-1{
+font-size:20px;
+
+}
+    </style>
+</head>
+<body>
+
+<div class="container-fluid title">
+    <div class="row" >
+
+        <div class="col-md-1 "  >真机调试</div>
+            <div class="col-md-8 ">你好</div>
+            <div class="col-md-3 ">
+                <div>结束调试</div>
+            </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row" >
+        <div class="col-md-6 ">
+            <div >
+                <div style="padding:50px;border-right:1px solid #eeeeee">
+                    <div style="">
+                                <canvas id="canvas" style=""></canvas>
+                    </div>
+                    <div style="float:left;margin-top:20px">
+
+                             <button  onclick="cmd('KEYCODE_HOME')" >home</button>
+                             <button  onclick="cmd('KEYCODE_MENU')">菜单栏</button>
+                        <button onclick="cmd('KEYCODE_BACK')">返回</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="col-md-6 ">
+            <div  class="tip-1 ">安装测试包</div>
+            <div id="xml" >
+                <div>
+                    <form id= "ss">
+                          <p >上传文件： <input type="file" id="uploadForm"/></p>
+                       <input id="dosubmit" type="button" name="dosubmit" value="提交">
+                    </form>
+                </div>
+                <div>
+                    <table class="table">
+                      <caption>历史提交apk</caption>
+                      <thead>
+                        <tr>
+                          <th>应用名称</th>
+                          <th>版本号</th>
+                            <th>大小</th>
+                            <th>上传时间</th>
+                            <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+var BLANK_IMG ='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+var down=false
+var canvas = document.getElementById('canvas')
+  , g = canvas.getContext('2d')
+    var roomName = {{ room_name_json }};
+
+var xml=function (){
+    $.ajax({
+        url:'/screen/uixml',
+        type:"get",
+        success:function(res) {
+        $("#xml").text(res['data'])
+        console.log(res['data'])
+
+               }
+               })
+}
+
+var install_apk=function (e){
+    $.ajax({
+        url:'/screen/install_apk',
+        type:"post",
+        data:{"data":$(e).attr('class')},
+        dataType:"json",
+        success:function(res) {
+        console.log(res['data'])
+
+               }
+               })
+}
+var history_apk=function (){
+    $.ajax({
+        url:'/screen/get_hitstory_apk',
+        type:"get",
+        success:function(res) {
+            $("tbody").children().remove()
+            rs=res['data']['data']
+            for (var i=0;i<rs.length;i++)
+            {
+
+                str="<tr><td>"+
+                rs[i]['apk_name']+"</td><td>"+
+                rs[i]['apk_version']+"</td><td>"+
+                rs[i]['apk_size']+"</td><td>"+
+                rs[i]['createtime']+"</td><td>"+
+                "<span onclick=install_apk(this) class='"+rs[i]['apk_addr']+"'>安装</span></td>"+
+                "</tr>"
+
+                $("tbody").append(str)
+
+                }
+
+        }
+               })
+}
+history_apk()
+canvas.setAttribute('tabindex', '0')
+//点击监听
+canvas.addEventListener('click', function() {
+    canvas.focus();
+    window.addEventListener('keydown', doKeyDown, true)
+});
+function doKeyDown(e) {
+console.log(e.keyCode)
+}
+//按下监听
+canvas.addEventListener('mousedown', function(e){
+down=true
+res=JSON.stringify({
+                operation: 'down',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+
+})
+//提起监听
+canvas.addEventListener('mouseup', function(e){
+down=false
+res=JSON.stringify({
+                operation: 'up',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+})
+//滑动监听
+canvas.addEventListener('mousemove', function(e){
+if (down){
+res=JSON.stringify({
+                operation: 'move',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+}
+})
+
+var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/screen/' + roomName + '/');
+    chatSocket.binaryType = 'blob'
+    chatSocket.onopen = function() {
+        chatSocket.send(roomName)
+          console.log('onopen', arguments)
+
+
+        }
+    chatSocket.onmessage = function(message) {
+          var blob = new Blob([message.data], {type: 'image/jpeg'})
+          var URL = window.URL || window.webkitURL
+          var img = new Image()
+          img.onload = function() {
+            canvas.width = 377
+            canvas.height = 724
+            g.drawImage(img, 0, 0,377,724)
+            img.onload = null
+            img.src = BLANK_IMG
+            img = null
+            u = null
+            blob = null
+          }
+          var u = URL.createObjectURL(blob)
+          img.src = u
+    };
+    chatSocket.onclose = function(e) {
+        chatSocket.close()
+        console.log('onclose', arguments)
+    };
+     var touchSocket=new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/minitouch/' + roomName + '/');
+
+    touchSocket.onopen=function() {
+        touchSocket.send(JSON.stringify({'device':roomName}))
+          console.log('onopen', arguments,"minitouch")
+        }
+     touchSocket.onmessage= function(addr) {
+            console.log(addr)
+          touchSocket.send(addr)
+        }
+      touchSocket.onclose = function(e) {
+        touchSocket.close()
+        console.log('onclose', arguments)
+    };
+
+function cmd(e){
+    $.ajax({
+        url:'/screen/physicaldevice',
+        type:"post",
+        data:{"cmd":e},
+        dataType:"json",
+        success:function(res) {
+        $("#xml").text(res['data'])
+        console.log(res['data'])
+
+               }
+               })
+               }
+
+
+
+
+$("#dosubmit").click(function () {
+
+                    var formdata = new FormData();
+
+
+                    formdata.append("file", $("#uploadForm")[0].files[0]);
+
+
+                    $.ajax({
+
+                        url: "/screen/uploadFile/",
+
+                        type: "post",
+
+                        data: formdata,
+
+                        contentType: false,//enctype="multipart/form-data"
+
+                        processData: false,//不需要转换数据类型，即不需要把传输的数据转为字符串
+
+                        success: function (res) {
+                          if (res['code']=200){
+                            history_apk()
+                          }
+
+
+                            console.log(res)
+
+                        }
+
+                    });
+
+
+
+
+
+                });
+                </script>
+
+</body>
+</html>

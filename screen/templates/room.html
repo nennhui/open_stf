@@ -1,0 +1,198 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat Room</title>
+</head>
+<body>
+<script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+<div style="float:left;width:40%">
+    <div style="padding:50px;border-right:1px solid #eeeeee">
+        <div style="">
+                    <canvas id="canvas" style=""></canvas>
+        </div>
+        <div style="float:left;margin-top:20px">
+
+                 <button  onclick="cmd('KEYCODE_HOME')" >home</button>
+                 <button  onclick="cmd('KEYCODE_MENU')">菜单栏</button>
+            <button onclick="cmd('KEYCODE_BACK')">返回</button>
+        </div>
+    </div>
+
+</div>
+
+
+<div id="xml" style="float:right;width:60%">
+    <div>
+        <form id= "ss">
+              <p >上传文件： <input type="file" id="uploadForm"/></p>
+           <input id="dosubmit" type="button" name="dosubmit" value="ajax上传">
+        </form>
+    </div>
+    <label>历史提交apk</label>
+</div>
+
+</body>
+<script>
+var BLANK_IMG ='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+var down=false
+var canvas = document.getElementById('canvas')
+  , g = canvas.getContext('2d')
+    var roomName = {{ room_name_json }};
+
+var xml=function (){
+    $.ajax({
+        url:'/screen/uixml',
+        type:"get",
+        success:function(res) {
+        $("#xml").text(res['data'])
+        console.log(res['data'])
+
+               }
+               })
+}
+canvas.setAttribute('tabindex', '0')
+//点击监听
+canvas.addEventListener('click', function() {
+    canvas.focus();
+    window.addEventListener('keydown', doKeyDown, true)
+});
+function doKeyDown(e) {
+console.log(e.keyCode)
+}
+//按下监听
+canvas.addEventListener('mousedown', function(e){
+down=true
+res=JSON.stringify({
+                operation: 'down',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+
+})
+//提起监听
+canvas.addEventListener('mouseup', function(e){
+down=false
+res=JSON.stringify({
+                operation: 'up',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+})
+//滑动监听
+canvas.addEventListener('mousemove', function(e){
+if (down){
+res=JSON.stringify({
+                operation: 'move',
+                xP: e.layerX,
+                yP: e.layerY,
+              })
+touchSocket.onmessage(res)
+}
+})
+
+var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/screen/' + roomName + '/');
+    chatSocket.binaryType = 'blob'
+    chatSocket.onopen = function() {
+        chatSocket.send(roomName)
+          console.log('onopen', arguments)
+
+
+        }
+    chatSocket.onmessage = function(message) {
+          var blob = new Blob([message.data], {type: 'image/jpeg'})
+          var URL = window.URL || window.webkitURL
+          var img = new Image()
+          img.onload = function() {
+            canvas.width = 377
+            canvas.height = 724
+            g.drawImage(img, 0, 0,377,724)
+            img.onload = null
+            img.src = BLANK_IMG
+            img = null
+            u = null
+            blob = null
+          }
+          var u = URL.createObjectURL(blob)
+          img.src = u
+    };
+    chatSocket.onclose = function(e) {
+        chatSocket.close()
+        console.log('onclose', arguments)
+    };
+     var touchSocket=new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/minitouch/' + roomName + '/');
+
+    touchSocket.onopen=function() {
+        touchSocket.send(JSON.stringify({'device':roomName}))
+          console.log('onopen', arguments,"minitouch")
+        }
+     touchSocket.onmessage= function(addr) {
+            console.log(addr)
+          touchSocket.send(addr)
+        }
+      touchSocket.onclose = function(e) {
+        touchSocket.close()
+        console.log('onclose', arguments)
+    };
+
+function cmd(e){
+    $.ajax({
+        url:'/screen/physicaldevice',
+        type:"post",
+        data:{"cmd":e},
+        dataType:"json",
+        success:function(res) {
+        $("#xml").text(res['data'])
+        console.log(res['data'])
+
+               }
+               })
+               }
+
+
+
+
+$("#dosubmit").click(function () {
+
+                    var formdata = new FormData();
+
+
+                    formdata.append("file", $("#uploadForm")[0].files[0]);
+
+
+                    $.ajax({
+
+                        url: "/screen/uploadFile/",
+
+                        type: "post",
+
+                        data: formdata,
+
+                        contentType: false,//enctype="multipart/form-data"
+
+                        processData: false,//不需要转换数据类型，即不需要把传输的数据转为字符串
+
+                        success: function (res) {
+
+                            console.log(res)
+
+                        }
+
+                    });
+
+
+
+
+
+                });
+
+
+</script>
+</html>
